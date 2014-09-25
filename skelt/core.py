@@ -2,18 +2,63 @@ import os
 from pathlib import Path
 from string import Template
 
-    # for root, dirs, files in os.walk(str(service_dir)):
-    #     print(_(root), [_(d) for d in dirs], [_(f) for f in files])
-
-# def _(original):
-#     d = {'name': 'fizzgig'}
-#     return Template(original).safe_substitute(d)
-
-#def walk():
 
 IGNORABLES = [
+    'CVS',
+    '.svn',
     '.git',
+    'tmp',
 ]
+
+
+def petrify(source_dir, target_dir, replacements,
+            ignorables=None, emptiables=None):
+    """
+    Create a skeleton in *target_dir* based on *source_dir*.
+
+    *replacements* is a dict of (string, var) pairs where
+    each occurence of *string* in file names or contents will
+    be replaced by a template variable *var*.
+    For example, {'myproject': 'projname'} would replace each
+    occurence of 'myproject' with the string '${projname}'.
+
+    *ignorables* is a list of file/directory names which will not
+    be copied. *emptiables* is a list of file names which should
+    exist in the destination, but without any contents.
+    """
+
+    if ignorables is None:
+        ignorables = IGNORABLES
+
+    petrifier = Petrifier(replacements)
+
+    for root, dirs, files in os.walk(str(source_dir)):
+
+        for ignorable in ignorables:
+            if ignorable in dirs:
+                dirs.remove(ignorable)
+
+        process_dir(source_dir, target_dir,
+                    root, dirs, files,
+                    petrifier, replacements, ignorables, emptiables)
+
+
+def rehydrate(source_dir, target_dir, replacements):
+    """
+    Fill out the skeleton in *source_dir*, copying the contents to *target_dir*.
+
+    *replacements* is a dict of (var, string) pairs where
+    the stdlib Template object is used to replace all occurrences
+    of $var or ${var} is replaced with *string*.
+    """
+
+    hydrator = Hydrator(replacements)
+
+    for root, dirs, files in os.walk(str(source_dir)):
+        process_dir(source_dir, target_dir,
+                    root, dirs, files,
+                    hydrator, replacements)
+
 
 class Petrifier():
 
@@ -37,65 +82,34 @@ class Hydrator():
         return Template(original).safe_substitute(self.replacements)
 
 
-def petrify(source_dir, target_dir, replacements, ignorables=None, emptiables=None):
+def process_dir(source_dir, target_dir,
+                root, dirs, files,
+                munger, replacements, ignorables=None, emptiables=None):
 
     if ignorables is None:
-        ignorables = IGNORABLES
-
+        ignorables = []
     if emptiables is None:
         emptiables = []
 
-    p = Petrifier(replacements)
+    source_root = Path(root)
+    target_root = Path(munger(root.replace(source_dir, target_dir)))
+    print("In directory:", source_root)
 
-    target_path = Path(target_dir)
-    if not target_path.exists():
-        target_path.mkdir()
+    if not target_root.exists():
+        target_root.mkdir()
 
-    for root, dirs, files in os.walk(str(source_dir)):
-        source_root = Path(root)
-        target_root = Path(p(root.replace(source_dir, target_dir)))
-        print(source_root)
-        if not target_root.exists():
-            target_root.mkdir()
-        for ignorable in ignorables:
-            if ignorable in dirs:
-                dirs.remove(ignorable)
-        for f in files:
-            if f in ignorables:
-                continue
-            source_path = source_root / f
-            target_path = target_root / p(f)
-            if f in emptiables:
-                with target_path.open('w') as t:
-                    t.write('')
-                continue
-            print("  opening ", source_path)
-            print("  creating", target_path)
-            with source_path.open() as s:
-                with target_path.open('w') as t:
-                    for line in s:
-                        t.write(p(line))
-
-def rehydrate(source_dir, target_dir, replacements):
-
-    h = Hydrator(replacements)
-
-    target_path = Path(target_dir)
-    if not target_path.exists():
-        target_path.mkdir()
-
-    for root, dirs, files in os.walk(str(source_dir)):
-        source_root = Path(root)
-        target_root = Path(h(root.replace(source_dir, target_dir)))
-        print(source_root)
-        if not target_root.exists():
-            target_root.mkdir()
-        for f in files:
-            source_path = source_root / f
-            target_path = target_root / h(f)
-            print("  opening ", source_path)
-            print("  creating", target_path)
-            with source_path.open() as s:
-                with target_path.open('w') as t:
-                    for line in s:
-                        t.write(h(line))
+    for f in files:
+        if f in ignorables:
+            continue
+        source_path = source_root / f
+        target_path = target_root / munger(f)
+        print("  creating", target_path)
+        print("      from", source_path)
+        if f in emptiables:
+            with target_path.open('w') as t:
+                t.write('')
+            continue
+        with source_path.open() as s:
+            with target_path.open('w') as t:
+                for line in s:
+                    t.write(munger(line))
