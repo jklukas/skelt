@@ -1,0 +1,3 @@
+# Scalafoo
+
+Scalafoo does things.
