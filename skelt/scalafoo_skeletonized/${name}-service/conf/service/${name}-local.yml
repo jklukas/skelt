@@ -1,0 +1,11 @@
+env: local
+
+logging:
+  level: DEBUG
+  console:
+    enabled: true
+    threshold: ALL
+  file:
+    enabled: false
+  syslog:
+    enabled: false

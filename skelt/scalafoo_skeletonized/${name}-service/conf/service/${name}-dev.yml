@@ -1,0 +1,20 @@
+env: dev
+
+logging:
+  level: DEBUG
+  loggers:
+    org.eclipse.jetty: INFO
+    org.apache.http: WARN
+  console:
+    enabled: false
+    threshold: ALL
+  file:
+    enabled: true
+    threshold: ALL
+    currentLogFilename: logs/${name}.log
+    archivedLogFilenamePattern: logs/${name}-%d.log
+    archivedFileCount: 5
+  syslog:
+    enabled: true
+    host: localhost
+    facility: local0
