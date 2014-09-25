@@ -1,4 +1,4 @@
-# 'skelt'
+# `skelt`
 
 A code skeleton generator and rehydrator library for Python 3.4+.
 
