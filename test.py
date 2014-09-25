@@ -10,7 +10,7 @@ def main():
         'scalafoo': 'name',
         'Scalafoo': 'Name',
         'Jeff Klukas': 'author',
-        'jklukas@simple.com': 'email',
+        'jeff@klukas.net': 'email',
     }
 
     ignorables = IGNORABLES + [
