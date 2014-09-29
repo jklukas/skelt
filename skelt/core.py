@@ -3,12 +3,12 @@ from pathlib import Path
 from string import Template
 
 
-IGNORABLES = [
+IGNORABLES = (
     'CVS',
     '.svn',
     '.git',
     'tmp',
-]
+)
 
 
 def petrify(source_dir, target_dir, replacements,
@@ -55,7 +55,7 @@ def rehydrate(source_dir, target_dir, replacements):
     hydrator = Hydrator(replacements)
 
     for root, dirs, files in os.walk(str(source_dir)):
-        process_dir(source_dir, target_dir,
+        process_dir(str(source_dir), str(target_dir),
                     root, dirs, files,
                     hydrator, replacements)
 
